@@ -1,6 +1,7 @@
 import math
 import numpy as np # for norm
 import scipy.special as sps # for binom
+import scipy.linalg as spl # for inverse sqrt of matrix
 
 def Pn(a, An, b, Bn):
     """Returns equation 9, takes individual coords of A and B"""
@@ -19,12 +20,18 @@ def In(nn, a, An, mn, b, Bn):
     return val
 
 
-def S(n, a, A, m, b, B):
+def gen_S(n, a, A, m, b, B):
     """Returns equation 7"""
     return math.exp(-a*b*np.linalg.norm(A-B)**2/(a+b))*In(n[0],a,A[0],m[0],b,B[0])*In(n[1],a,A[1],m[1],b,B[1])*In(n[2],a,A[2],m[2],b,B[2]) 
 
 
-def K(a, A, b, B):
+def normalize(n, A, a):
+    """Returns a normalization constant from vector A and basis a"""
+    val = gen_S(n, A, a, n, A, a)
+    return (1/gen_S(n, A, a, n, A, a)**0.5)
+
+
+def gen_K(a, A, b, B):
     """Returns equation 12: specifically for S gaussians!"""
     val = 0
     n = np.array([0,0,0])
@@ -32,16 +39,14 @@ def K(a, A, b, B):
     mx = np.array([2,0,0])
     my = np.array([0,2,0])
     mz = np.array([0,0,2])
-    val = -2*b*S(n, a, A, m, b, B) + 4*b**2*S(n, a, A, mx, b, B)
-    print("Val = {}".format(val))
-    print("Overlap1 = {} and Overlap2 = {}".format(S(n, a, A, m, b, B),S(n, a, A, mx, b, B)))
-    val += -2*b*S(n, a, A, m, b, B) + 4*b**2*S(n, a, A, my, b, B)
-    val += -2*b*S(n, a, A, m, b, B) + 4*b**2*S(n, a, A, mz, b, B)
+    val = -2*b*gen_S(n, a, A, m, b, B) + 4*b**2*gen_S(n, a, A, mx, b, B)
+    val += -2*b*gen_S(n, a, A, m, b, B) + 4*b**2*gen_S(n, a, A, my, b, B)
+    val += -2*b*gen_S(n, a, A, m, b, B) + 4*b**2*gen_S(n, a, A, mz, b, B)
     val = -0.5*val
     return val
 
 
-def V(a, A, b, B):
+def gen_V(a, A, b, B, molecule):
     """Returns equation 14: specifically for S gaussians!"""
     val1 = 0
     val2 = 0
@@ -51,32 +56,23 @@ def V(a, A, b, B):
     Py = Pn(a, A[1], b, B[1])
     Pz = Pn(a, A[2], b, B[2])
     P = np.array([Px, Py, Pz])
-#    print("P = {}".format(P))
 
-    C = A # Hard-coding two atoms for now
-#    if C.all() == P.all():
+    C = molecule[0] # Hard-coding two atoms for now
     if np.array_equal(C, P):
         val2 += 1
-#        print ("Caught the first if")
     else:
         val2 += math.pi**0.5*math.erf((a+b)**0.5*np.linalg.norm(P-C))/(2*(a+b)**0.5*np.linalg.norm(P-C))
-#        print("Caught the first else")
 
-    C = B # Hard-coding two atoms for now
-#    if C.all() == P.all():
+    C = molecule[1] # Hard-coding two atoms for now
     if np.array_equal(C, P):
         val2 += 1
-#        print ("Caught the second if")
     else:
         val2 += math.pi**0.5*math.erf((a+b)**0.5*np.linalg.norm(P-C))/(2*(a+b)**0.5*np.linalg.norm(P-C)) 
-#        print ("Caught the second else")
 
-#    print("val1 = {}".format(val1))
-#    print("val2 = {}".format(val2))
     return val1*val2
 
 
-def eri(a1, A1, b1, B1, a2, A2, b2, B2):
+def gen_eri(a1, A1, b1, B1, a2, A2, b2, B2):
     """Returns equation 15""" 
 
     Px1 = Pn(a1, A1[0], b1, B1[0])
@@ -101,20 +97,103 @@ def eri(a1, A1, b1, B1, a2, A2, b2, B2):
     return val
 
 
-n = np.array([2,0,0])
-m = np.array([0,0,0])
-a1 = 5.447178
-norm1 = 2.5411995
-a2 = 0.824547
-norm2 = 0.6166967
-a3 = 0.183192000
-norm3 = 0.1995676
-A = np.array([0,0,0])
-B = np.array([1.4,0,0])
-nc1 = 2.5411995
+def S_mat(molecule, basis):
+    """Returns overlap matrix S"""
+    S = np.zeros([molecule.shape[0]*basis.shape[1],molecule.shape[0]*basis.shape[1]])
+    n = np.array([0,0,0])
+    m = np.array([0,0,0])
+    natom = molecule.shape[0]
+    nbasis = basis.shape[1]
 
-#print(S(n, a, A, m, a, B))
+    for i in range(0,natom): # Atom 1 loop
+        for j in range(0,natom): # Atom 2 loop
+            for p in range(0,nbasis): # Basis function 1 loop
+                for q in range(0,nbasis): # Basis function 2 loop
+                    S[p+3*i,q+3*j] = gen_S(n, basis[i,p], molecule[i], m, basis[j,q], molecule[j]) * normalize(n, basis[i,p], molecule[i]) * normalize(m, basis[j,q], molecule[j])
+
+    return S
+
+
+def K_mat(molecule, basis):
+    """Returns kinetic energy matrix K"""
+    K = np.zeros([molecule.shape[0]*basis.shape[1],molecule.shape[0]*basis.shape[1]])
+    n = np.array([0,0,0])
+    m = np.array([0,0,0])
+    natom = molecule.shape[0]
+    nbasis = basis.shape[1]
+
+    for i in range(0,natom): # Atom 1 loop
+        for j in range(0,natom): # Atom 2 loop
+            for p in range(0,nbasis): # Basis function 1 loop
+                for q in range(0,nbasis): # Basis function 2 loop
+                    K[p+3*i,q+3*j] = gen_K(basis[i,p], molecule[i], basis[j,q], molecule[j]) * normalize(n, basis[i,p], molecule[i]) * normalize(m, basis[j,q], molecule[j])
+
+    return K
+
+
+def V_mat(molecule, basis):
+    """Returns kinetic energy matrix K"""
+    V = np.zeros([molecule.shape[0]*basis.shape[1],molecule.shape[0]*basis.shape[1]])
+    n = np.array([0,0,0])
+    m = np.array([0,0,0])
+    natom = molecule.shape[0]
+    nbasis = basis.shape[1]
+
+    for i in range(0,natom): # Atom 1 loop
+        for j in range(0,natom): # Atom 2 loop
+            for p in range(0,nbasis): # Basis function 1 loop
+                for q in range(0,nbasis): # Basis function 2 loop
+                    V[p+3*i,q+3*j] = gen_V(basis[i,p], molecule[i], basis[j,q], molecule[j], molecule) * normalize(n, basis[i,p], molecule[i]) * normalize(m, basis[j,q], molecule[j])
+
+    return V
+
+
+def gen_H_core(molecule, basis):
+    H_core = K_mat(molecule, basis) + V_mat(molecule, basis)
+    return H_core
+
+
+molecule = np.array([[0,0,0],[1.4,0,0]])
+basis = np.array([[5.447178, 0.824547, 0.183192000],[5.447178, 0.824547, 0.183192000]])
+
+print("\nS matrix:\n{}".format(S_mat(molecule, basis)))
+print("\nK matrix:\n{}".format(K_mat(molecule, basis)))
+print("\nV matrix:\n{}".format(V_mat(molecule, basis)))
+print("\nCore Hamiltonian:\n{}".format(gen_H_core(molecule, basis)))
+H = gen_H_core(molecule, basis)
+S = S_mat(molecule, basis)
+orth = spl.sqrtm(spl.inv(S))
+print("\nOrthoganalization matrix:\n{}".format(orth))
+#F = np.multiply(np.multiply(orth.T,H),orth)
+F = np.dot(np.dot(orth.T,H),orth)
+print("\nInitial Fock matrix in AO basis:\n{}".format(F))
+eps, C0 = np.linalg.eig(F)
+print("\nEigenvalues:\n{}\nEigenvectors:\n{}".format(eps,C0))
+C = np.dot(orth,C0)
+print("\nC:\n{}".format(C))
+Cocc = C[:, :1]
+print("\nCocc:\n{}".format(Cocc))
+D = np.dot(Cocc, Cocc.T) 
+print("\nD:\n{}".format(D))
+E = np.sum(np.dot(D, (H + F)))
+print("\nE = {}".format(E))
+
+
+#n = np.array([0,0,0])
+#m = np.array([0,0,0])
+#a1 = 5.447178
+#norm1 = 2.5411995
+#a2 = 0.824547
+#norm2 = 0.6166967
+#a3 = 0.183192000
+#norm3 = 0.1995676
+#A = np.array([0,0,0])
+#B = np.array([1.4,0,0])
+#nc1 = 2.5411995
+
+#print(gen_S(n, a1, A, m, a1, A)*norm1*norm1)
 #print(K(a2, A, a2, B)*norm2*norm2)
 #print(V(a1, B, a1, B)*norm1*norm1)
 #print(V(a1, A, a1, A))
-print(eri(a1, A, a1, B, a1, A, a1, B)*norm1*norm1*norm1*norm1)
+#print(eri(a1, A, a1, B, a1, A, a1, B)*norm1*norm1*norm1*norm1)
+#print(normalize(n, a1, A))
