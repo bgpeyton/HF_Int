@@ -39,8 +39,8 @@ def loop_hf(molecule, basis, F, H):
     return E, F
     
 
-def full_hf(molecule, basis):
-    """Solves the Hartree Fock equations self-consistently given a molecule and a basis""" 
+def full_hf(molecule, basis, convergence=10E-12):
+    """Solves the HF equations self-consistently given a molecule, basis, and optional convergence""" 
     # Initial core Hamiltonian
     H = gen_H_core(molecule, basis)
     
@@ -67,7 +67,7 @@ def full_hf(molecule, basis):
     print("First E = {}".format(E))        
     
     # Repeat until convergence 
-    while (math.fabs(E_new - E)) > 10E-12:
+    while (math.fabs(E_new - E)) > convergence:
         E = E_new    
         E_new, F = loop_hf(molecule, basis, F, H)
 
