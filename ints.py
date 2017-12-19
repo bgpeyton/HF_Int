@@ -1,8 +1,6 @@
 import math
 import numpy as np # for norm
 import scipy.special as sps # for binom
-import scipy.linalg as spl # for inverse sqrt of matrix
-np.set_printoptions(precision=6)
 
 def Pn(a, An, b, Bn):
     """Returns equation 9, takes individual coords of A and B"""
@@ -178,55 +176,3 @@ def eri_mat(molecule, basis, P):
                                     G[ii+3*i,jj+3*j] += P[mm+3*m,nn+3*n]*(2*gen_eri(basis[i,ii],molecule[i],basis[j,jj],molecule[j],basis[m,mm],molecule[m],basis[n,nn],molecule[n]) - gen_eri(basis[i,ii],molecule[i],basis[n,nn],molecule[n],basis[m,mm],molecule[m],basis[j,jj],molecule[j])) * normalize(na, basis[i,ii], molecule[i]) * normalize(na, basis[j,jj],molecule[j]) * normalize(na, basis[m,mm],molecule[m]) * normalize(na, basis[n,nn],molecule[n])
    
     return G
-
-
-    
-
-
-
-
-#molecule = np.array([[0,0,0],[1.4,0,0]])
-#basis = np.array([[5.447178, 0.824547, 0.183192000],[5.447178, 0.824547, 0.183192000]])
-#
-#H = gen_H_core(molecule, basis)
-#S = S_mat(molecule, basis)
-#orth = spl.sqrtm(spl.inv(S))
-#print("\nOrthoganalization matrix:\n{}".format(orth))
-#
-## Let's try making the P matrix Valeev's way
-#eps, c = np.linalg.eigh(np.dot(np.dot(orth.T,H),orth))
-#print("\nEigenvectors:\n{}".format(c))
-#c_norm = np.dot(orth,c)
-#print("\nNormalized Eigenvectors:\n{}".format(c_norm))
-#P = P_mat(molecule,basis, c_norm)
-#print("\nP:\n{}".format(P))
-#
-#G = eri_mat(molecule,basis,P)
-#print("\nG matrix:\n{}".format(G))
-#
-#F = H + G
-#print("\nF:\n{}".format(F))
-#
-#E = np.sum((2*H+G)*P)
-#print("E = {}".format(E))        
-
-
-#n = np.array([0,0,0])
-#m = np.array([0,0,0])
-#a1 = 5.447178
-#norm1 = 2.5411995
-#a2 = 0.824547
-#norm2 = 0.6166967
-#a3 = 0.183192000
-#norm3 = 0.1995676
-#A = np.array([0,0,0])
-#B = np.array([1.4,0,0])
-#nc1 = 2.5411995
-
-#print(gen_S(n, a1, A, m, a1, A)*norm1*norm1)
-#print(K(a2, A, a2, B)*norm2*norm2)
-#print(V(a1, B, a1, B)*norm1*norm1)
-#print(V(a1, A, a1, A))
-#print("Test eri value:{}".format(gen_eri(a1, A, a1, A, a1, A, a1, A)))
-#print(gen_eri(a2, A, a1, A, a3, A, a2, B)*normalize(n,a2,A)*normalize(n,a1,A)*normalize(n,a3,A)*normalize(n,a2,B))
-#print(normalize(n, a1, A))
