@@ -34,7 +34,6 @@ def loop_hf(molecule, basis, F, H):
     
     # Energy
     E = np.sum((2*H+G)*P)
-    print("E = {}".format(E))        
 
     return E, F
     
@@ -64,7 +63,6 @@ def full_hf(molecule, basis, convergence=10E-12):
     # Initial energy
     E = 0
     E_new = np.sum((2*H+G)*P)
-    print("First E = {}".format(E))        
     
     # Repeat until convergence 
     while (math.fabs(E_new - E)) > convergence:
@@ -76,10 +74,10 @@ def full_hf(molecule, basis, convergence=10E-12):
     
     # Final total HF energy
     E_HF = E_new + R
-    print("Final HF energy: {}".format(E_HF))
 
+    return E_HF
 
-molecule = np.array([[0,0,0],[1.4,0,0]])
-basis = np.array([[5.447178, 0.824547, 0.183192000],[5.447178, 0.824547, 0.183192000]])
+#molecule = np.array([[0,0,0],[1.4,0,0]])
+#basis = np.array([[5.447178, 0.824547, 0.183192000],[5.447178, 0.824547, 0.183192000]])
 
-full_hf(molecule, basis)
+#full_hf(molecule, basis)
