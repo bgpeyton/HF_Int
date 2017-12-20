@@ -26,7 +26,6 @@ def gen_S(n, a, A, m, b, B):
 
 def normalize(n, a, A):
     """Returns a normalization constant from vector A and basis a"""
-    val = gen_S(n, a, A, n, a, A)
     return (1/gen_S(n, a, A, n, a, A)**0.5)
 
 
@@ -176,3 +175,5 @@ def eri_mat(molecule, basis, P):
                                     G[ii+3*i,jj+3*j] += P[mm+3*m,nn+3*n]*(2*gen_eri(basis[i,ii],molecule[i],basis[j,jj],molecule[j],basis[m,mm],molecule[m],basis[n,nn],molecule[n]) - gen_eri(basis[i,ii],molecule[i],basis[n,nn],molecule[n],basis[m,mm],molecule[m],basis[j,jj],molecule[j])) * normalize(na, basis[i,ii], molecule[i]) * normalize(na, basis[j,jj],molecule[j]) * normalize(na, basis[m,mm],molecule[m]) * normalize(na, basis[n,nn],molecule[n])
    
     return G
+
+
