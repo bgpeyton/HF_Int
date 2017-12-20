@@ -76,8 +76,3 @@ def full_hf(molecule, basis, convergence=10E-12):
     E_HF = E_new + R
 
     return E_HF
-
-#molecule = np.array([[0,0,0],[1.4,0,0]])
-#basis = np.array([[5.447178, 0.824547, 0.183192000],[5.447178, 0.824547, 0.183192000]])
-
-#full_hf(molecule, basis)
