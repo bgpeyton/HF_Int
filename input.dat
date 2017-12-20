@@ -1,0 +1,14 @@
+#This is a test psi4 input file
+#Comments are lines starting with #
+
+memory 600 mb
+
+molecule h2 {
+  H 0 0 0
+  H 0 0 1.0 
+}
+
+set basis 3-21G 
+set step_type nr
+set intrafrag_step_limit 0.1
+optimize('scf', g_convergence=10E-6)
